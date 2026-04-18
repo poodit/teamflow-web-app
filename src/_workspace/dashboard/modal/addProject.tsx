@@ -1,5 +1,15 @@
 import { useMemo, useState } from "react";
-import { X, Users } from "lucide-react";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
+import { CalendarIcon, X, Users } from "lucide-react";
+
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
 
 type Member = {
   id: number;
@@ -13,6 +23,7 @@ type AddProjectModalProps = {
   onCreate: (project: {
     name: string;
     description: string;
+    startDate: string;
     dueDate: string;
     members: Member[];
   }) => void;
@@ -26,6 +37,11 @@ const mockMembers: Member[] = [
   { id: 5, name: "อาร์ม", role: "Project Coordinator" },
 ];
 
+function formatDateForSubmit(date?: Date) {
+  if (!date) return "";
+  return format(date, "yyyy-MM-dd");
+}
+
 export default function AddProjectModal({
   open,
   onClose,
@@ -33,7 +49,8 @@ export default function AddProjectModal({
 }: AddProjectModalProps) {
   const [projectName, setProjectName] = useState("");
   const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [dueDate, setDueDate] = useState<Date | undefined>();
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const selectedMembers = useMemo(
@@ -50,7 +67,8 @@ export default function AddProjectModal({
   const resetForm = () => {
     setProjectName("");
     setDescription("");
-    setDueDate("");
+    setStartDate(undefined);
+    setDueDate(undefined);
     setSelectedIds([]);
   };
 
@@ -67,10 +85,26 @@ export default function AddProjectModal({
       return;
     }
 
+    if (!startDate) {
+      alert("กรุณาเลือก Start Date");
+      return;
+    }
+
+    if (!dueDate) {
+      alert("กรุณาเลือก Due Date");
+      return;
+    }
+
+    if (dueDate < startDate) {
+      alert("Due Date ต้องไม่ก่อน Start Date");
+      return;
+    }
+
     onCreate({
       name: projectName,
       description,
-      dueDate,
+      startDate: formatDateForSubmit(startDate),
+      dueDate: formatDateForSubmit(dueDate),
       members: selectedMembers,
     });
 
@@ -88,7 +122,6 @@ export default function AddProjectModal({
       />
 
       <div className="relative w-full max-w-3xl max-h-[88vh] overflow-hidden rounded-2xl border-2 border-[#111] bg-white dark:bg-zinc-900 shadow-[6px_6px_0px_#111]">
-        {/* Header */}
         <div className="flex items-center justify-between border-b-2 border-[#111] dark:border-zinc-700 px-5 py-4">
           <div>
             <h2 className="text-lg font-black text-[#111] dark:text-white">
@@ -107,7 +140,6 @@ export default function AddProjectModal({
           </button>
         </div>
 
-        {/* Body */}
         <form
           onSubmit={handleSubmit}
           className="max-h-[calc(88vh-72px)] overflow-y-auto px-5 py-4"
@@ -139,17 +171,78 @@ export default function AddProjectModal({
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="mb-1.5 block text-sm font-black text-[#111] dark:text-white">
-                  กำหนดส่ง
+                  Start Date
                 </label>
-                <input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="h-12 w-full rounded-2xl border-2 border-[#111] bg-white px-4 text-sm font-bold text-[#111] outline-none dark:bg-zinc-800 dark:text-white"
-                />
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-12 w-full justify-start rounded-2xl border-2 border-[#111] bg-white px-4 text-left text-sm font-bold text-[#111] shadow-none hover:bg-white dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-800"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {startDate ? (
+                        format(startDate, "PPP", { locale: th })
+                      ) : (
+                        <span>เลือกวันเริ่มต้น</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    side="bottom"
+                    sideOffset={8}
+                    className="z-[100] w-auto rounded-xl border-2 border-[#111] bg-white p-0 shadow-[4px_4px_0px_#111]"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={startDate}
+                      onSelect={setStartDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-black text-[#111] dark:text-white">
+                  Due Date
+                </label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="h-12 w-full justify-start rounded-2xl border-2 border-[#111] bg-white px-4 text-left text-sm font-bold text-[#111] shadow-none hover:bg-white dark:bg-zinc-800 dark:text-white dark:hover:bg-zinc-800"
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {dueDate ? (
+                        format(dueDate, "PPP", { locale: th })
+                      ) : (
+                        <span>เลือกวันกำหนดส่ง</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    align="start"
+                    side="bottom"
+                    sideOffset={8}
+                    className="z-[100] w-auto rounded-xl border-2 border-[#111] bg-white p-0 shadow-[4px_4px_0px_#111]"
+                  >
+                    <Calendar
+                      mode="single"
+                      selected={dueDate}
+                      onSelect={setDueDate}
+                      disabled={(date) => !!startDate && date < startDate}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div>

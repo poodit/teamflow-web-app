@@ -33,6 +33,7 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import AddProjectModal from "./modal/addProject";
+import ViewProjectModal from "./modal/viewPeoject";
 import SortableDashboardItem from "./widgets/SortableDashboardItem";
 
 type Member = {
@@ -44,6 +45,7 @@ type Member = {
 type Project = {
   name: string;
   description?: string;
+  startDate?: string;
   dueDate?: string;
   members?: Member[];
   prog: string;
@@ -124,6 +126,9 @@ export default function DashboardPage() {
   const [isDark, setIsDark] = useState(false);
   const [isAddProjectOpen, setIsAddProjectOpen] = useState(false);
   const [isWidgetMenuOpen, setIsWidgetMenuOpen] = useState(false);
+
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
+  const [isProjectDetailOpen, setIsProjectDetailOpen] = useState(false);
 
   const [projects, setProjects] = useState<Project[]>([
     {
@@ -216,15 +221,27 @@ export default function DashboardPage() {
     setIsDark(!isDark);
   };
 
+  const handleOpenProjectDetail = (project: Project) => {
+    setSelectedProject(project);
+    setIsProjectDetailOpen(true);
+  };
+
+  const handleCloseProjectDetail = () => {
+    setSelectedProject(null);
+    setIsProjectDetailOpen(false);
+  };
+
   const handleCreateProject = (newProject: {
     name: string;
     description: string;
+    startDate: string;
     dueDate: string;
     members: Member[];
   }) => {
     const createdProject: Project = {
       name: newProject.name,
       description: newProject.description,
+      startDate: newProject.startDate,
       dueDate: newProject.dueDate,
       members: newProject.members,
       prog: "0%",
@@ -372,7 +389,12 @@ export default function DashboardPage() {
         return (
           <div className="flex flex-col gap-4 h-full overflow-y-auto pr-1">
             {projects.map((proj, idx) => (
-              <div key={idx}>
+              <button
+                key={idx}
+                type="button"
+                onClick={() => handleOpenProjectDetail(proj)}
+                className="w-full rounded-xl p-3 text-left cursor-pointer border-2 border-transparent transition-all duration-150 hover:bg-[#f4f4f4] hover:text-[#111] hover:border-[#111] hover:shadow-[2px_2px_0px_#111] hover:-translate-y-px dark:hover:bg-zinc-800 dark:hover:text-white dark:hover:border-white/150 active:translate-y-px active:shadow-none focus:outline-none"
+              >
                 <div className="flex justify-between items-center mb-1.5 gap-3">
                   <div className="min-w-0">
                     <span className="text-sm font-black text-[#111] dark:text-white block truncate">
@@ -405,7 +427,7 @@ export default function DashboardPage() {
                     style={{ width: proj.prog }}
                   />
                 </div>
-              </div>
+              </button>
             ))}
           </div>
         );
@@ -899,6 +921,12 @@ export default function DashboardPage() {
         open={isAddProjectOpen}
         onClose={() => setIsAddProjectOpen(false)}
         onCreate={handleCreateProject}
+      />
+
+      <ViewProjectModal
+        open={isProjectDetailOpen}
+        project={selectedProject}
+        onClose={handleCloseProjectDetail}
       />
     </>
   );
